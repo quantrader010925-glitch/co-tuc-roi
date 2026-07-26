@@ -20,7 +20,10 @@
   body{padding-bottom:60px;}
   header{position:sticky;top:0;z-index:10;background:var(--bg);
     padding:calc(env(safe-area-inset-top) + 14px) 16px 10px;border-bottom:1px solid var(--border);}
-  h1{font-size:19px;margin:0 0 10px;font-weight:700;}
+  .headerTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  h1{font-size:19px;margin:0;font-weight:700;}
+  .headerBtns{display:flex;gap:16px;align-items:center;}
+  .iconBtn{background:none;border:none;color:var(--blue);font-size:17px;padding:2px;line-height:1;}
   .totals{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;}
   .totals .box{background:var(--card);border-radius:12px;padding:8px 14px;min-width:120px;flex:none;}
   .totals .box .lbl{font-size:11px;color:var(--muted);}
@@ -52,8 +55,12 @@
   .suggest .num{font-weight:700;font-size:15px;}
   .fab{position:fixed;right:18px;bottom:24px;width:52px;height:52px;border-radius:50%;
     background:var(--blue);color:#fff;font-size:26px;border:none;box-shadow:0 4px 14px rgba(0,0,0,.4);}
-  .refresh{background:none;border:none;color:var(--blue);font-size:13px;position:absolute;right:16px;top:calc(env(safe-area-inset-top) + 14px);}
   .empty{color:var(--muted);text-align:center;padding:40px 20px;font-size:14px;}
+  .ketQuaTimKiem{max-height:50vh;overflow-y:auto;margin-top:12px;}
+  .ketQuaTimKiem .row{padding:10px 4px;border-bottom:1px solid var(--border);}
+  .ketQuaTimKiem .row:last-child{border-bottom:none;}
+  .ketQuaTimKiem .ten{font-size:12px;color:var(--muted);margin-top:2px;}
+  .tag-danhmuc{font-size:10px;color:var(--green);border:1px solid var(--green);border-radius:8px;padding:1px 6px;margin-left:6px;}
   dialog{border:none;border-radius:16px;padding:0;width:88%;max-width:360px;background:var(--card);color:var(--text);}
   dialog::backdrop{background:rgba(0,0,0,.6);}
   .dlg-inner{padding:18px;}
@@ -91,8 +98,13 @@
 
 <div id="appScreen" style="display:none;">
   <header>
-    <h1>Cổ Tức &amp; ROI</h1>
-    <button class="refresh" onclick="taiDuLieu()">↻ Làm mới</button>
+    <div class="headerTop">
+      <h1>Cổ Tức &amp; ROI</h1>
+      <div class="headerBtns">
+        <button class="iconBtn" onclick="moTimKiem()" aria-label="Tìm nhanh mã cổ phiếu">🔍</button>
+        <button class="iconBtn" onclick="taiDuLieu()" aria-label="Làm mới">↻</button>
+      </div>
+    </div>
     <div class="modeSwitch">
       <button id="btnModeDanhMuc" onclick="doiChe('danhmuc')">Danh mục của tôi</button>
       <button id="btnModeThiTruong" onclick="doiChe('thitruong')">Toàn thị trường</button>
@@ -123,6 +135,17 @@
     <div class="dlg-actions">
       <button class="btn-secondary" onclick="document.getElementById('dlgThem').close()">Hủy</button>
       <button class="btn-primary" onclick="luuThemMa()">Thêm</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="dlgTimKiem">
+  <div class="dlg-inner">
+    <h3>Tìm nhanh mã cổ phiếu</h3>
+    <input id="timKiemInput" placeholder="Nhập mã hoặc tên doanh nghiệp..." oninput="veKetQuaTimKiem()">
+    <div class="ketQuaTimKiem" id="ketQuaTimKiem"></div>
+    <div class="dlg-actions">
+      <button class="btn-secondary" onclick="document.getElementById('dlgTimKiem').close()">Đóng</button>
     </div>
   </div>
 </dialog>
@@ -268,7 +291,7 @@ function veDanhMuc(){
           <span class="badge ${badgeClass(pct)}">${d.thoiGianHoanVon ? badgeText(pct) : "Chưa có dữ liệu"}</span>
         </div>
         <div class="grid2">
-          <div><span class="k">Cổ tức BQ 5 năm: </span><span class="v">${fmtSo(d.coTucBinhQuan)} đ</span></div>
+          <div><span class="k">Cổ tức BQ 3 năm: </span><span class="v">${fmtSo(d.coTucBinhQuan)} đ</span></div>
           <div><span class="k">Hoàn vốn: </span><span class="v">${fmtNam(d.thoiGianHoanVon)}</span></div>
         </div>
         <div class="inputs">
@@ -345,7 +368,7 @@ function veThiTruong(){
           <span class="badge ${badgeClass(pct)}">${d.thoiGianHoanVon ? badgeText(pct) : "Đang quét..."}</span>
         </div>
         <div class="grid2">
-          <div><span class="k">Cổ tức BQ 5 năm: </span><span class="v">${fmtSo(d.coTucBinhQuan)} đ</span></div>
+          <div><span class="k">Cổ tức BQ 3 năm: </span><span class="v">${fmtSo(d.coTucBinhQuan)} đ</span></div>
           <div><span class="k">Hoàn vốn: </span><span class="v">${fmtNam(d.thoiGianHoanVon)}</span></div>
         </div>
       `;
@@ -379,6 +402,57 @@ function capNhatSoLuong(ma, mucTieu, dangGiu){
       body: JSON.stringify({ action: "capNhatSoLuong", ma: ma, mucTieu: item.mucTieu, dangGiu: item.dangGiu })
     }).catch(() => alert("Không lưu được thay đổi, kiểm tra kết nối mạng."));
   }, 600);
+}
+
+// ---------- Tìm nhanh mã cổ phiếu (gộp Danh mục + Toàn thị trường) ----------
+function moTimKiem(){
+  document.getElementById("timKiemInput").value = "";
+  document.getElementById("ketQuaTimKiem").innerHTML =
+    '<div class="empty" style="padding:20px 0;">Nhập mã hoặc tên doanh nghiệp để tìm.</div>';
+  document.getElementById("dlgTimKiem").showModal();
+  setTimeout(() => document.getElementById("timKiemInput").focus(), 100);
+}
+
+/** Gộp danh sách DuLieu + ThiTruong theo mã, ưu tiên lấy tên doanh nghiệp từ ThiTruong */
+function danhSachTimKiemGop(){
+  const map = {};
+  THI_TRUONG.forEach(d => {
+    map[d.ma] = { ma: d.ma, ten: d.ten || "", nhom: d.nhom || "", hoanVon: d.thoiGianHoanVon, trongDanhMuc: false };
+  });
+  DATA.forEach(d => {
+    if (map[d.ma]) { map[d.ma].trongDanhMuc = true; }
+    else { map[d.ma] = { ma: d.ma, ten: "", nhom: d.nhom || "", hoanVon: d.thoiGianHoanVon, trongDanhMuc: true }; }
+  });
+  return Object.values(map);
+}
+
+function veKetQuaTimKiem(){
+  const tu = (document.getElementById("timKiemInput").value || "").trim().toUpperCase();
+  const el = document.getElementById("ketQuaTimKiem");
+  if (!tu){
+    el.innerHTML = '<div class="empty" style="padding:20px 0;">Nhập mã hoặc tên doanh nghiệp để tìm.</div>';
+    return;
+  }
+
+  const ds = danhSachTimKiemGop()
+    .filter(d => d.ma.toUpperCase().includes(tu) || (d.ten || "").toUpperCase().includes(tu))
+    .sort((a, b) => a.ma.localeCompare(b.ma))
+    .slice(0, 40);
+
+  if (ds.length === 0){
+    el.innerHTML = '<div class="empty" style="padding:20px 0;">Không tìm thấy mã nào.</div>';
+    return;
+  }
+
+  el.innerHTML = ds.map(d => `
+    <div class="row">
+      <div>
+        <span class="ma">${d.ma}</span>
+        ${d.trongDanhMuc ? '<span class="tag-danhmuc">Trong danh mục</span>' : ''}
+      </div>
+      <div class="ten">${d.ten || "(chưa rõ tên doanh nghiệp)"}${d.nhom ? " · " + d.nhom : ""}${d.hoanVon ? " · Hoàn vốn " + Number(d.hoanVon).toFixed(1) + " năm" : ""}</div>
+    </div>
+  `).join("");
 }
 
 function moThemMa(){
