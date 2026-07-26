@@ -461,11 +461,18 @@ function veKetQuaTimKiem(){
 
 /** Bấm chọn 1 kết quả tìm kiếm -> chuyển đúng chế độ/nhóm, cuộn tới và highlight thẻ đó */
 function chonKetQua(ma){
+  // Bỏ focus ô nhập trước để iPhone tắt bàn phím ảo ngay, tránh xung đột với việc cuộn
+  // trang ngay sau đó (đây là nguyên nhân chính khiến cuộn không hoạt động trên Safari).
+  const oTim = document.getElementById("timKiemInput");
+  if (oTim) oTim.blur();
   document.getElementById("dlgTimKiem").close();
 
   const coTrongDanhMuc = DATA.some(d => d.ma === ma);
   const coTrongThiTruong = THI_TRUONG.some(d => d.ma === ma);
-  if (!coTrongDanhMuc && !coTrongThiTruong) return;
+  if (!coTrongDanhMuc && !coTrongThiTruong) {
+    alert("Không tìm thấy dữ liệu chi tiết cho mã " + ma + ".");
+    return;
+  }
 
   // Ưu tiên ở lại chế độ hiện tại nếu mã có trong chế độ đó, nếu không thì tự chuyển chế độ
   let modeMoi = MODE;
@@ -485,13 +492,26 @@ function chonKetQua(ma){
   capNhatNutChe();
   veGiaoDien();
 
+  // Cuộn tới thẻ vừa chọn. Chờ đủ lâu (500ms) để dialog + bàn phím ảo trên iPhone đóng
+  // hoàn toàn trước khi cuộn — nếu cuộn ngay lúc bàn phím/dialog đang đóng, Safari có thể
+  // tính sai vị trí và cuộn không hoạt động hoặc lệch chỗ.
+  timDenTheKetQua_(ma, 0);
+}
+
+/** Thử tìm và cuộn tới thẻ "card-<ma>", tự thử lại vài lần nếu thẻ chưa kịp render */
+function timDenTheKetQua_(ma, soLanDaThu){
   setTimeout(() => {
     const el = document.getElementById("card-" + ma);
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (!el) {
+      if (soLanDaThu < 5) timDenTheKetQua_(ma, soLanDaThu + 1); // thử lại, tối đa 5 lần
+      return;
+    }
+    const chieuCaoHeader = (document.querySelector("header") || {}).offsetHeight || 0;
+    const viTri = el.getBoundingClientRect().top + window.pageYOffset - chieuCaoHeader - 12;
+    window.scrollTo({ top: Math.max(0, viTri), behavior: "smooth" });
     el.classList.add("highlight");
-    setTimeout(() => el.classList.remove("highlight"), 2200);
-  }, 80);
+    setTimeout(() => el.classList.remove("highlight"), 2500);
+  }, soLanDaThu === 0 ? 450 : 200);
 }
 
 function moThemMa(){
