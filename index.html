@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cổ Tức ROI</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cổ Tức ROI">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{
+    --bg:#0b0f14; --card:#141a22; --card2:#1b232e; --text:#e8edf2; --muted:#8a96a3;
+    --green:#2ecc71; --amber:#f5a623; --orange:#e67e22; --red:#e74c3c; --blue:#3498db;
+    --border:#232c38;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  body{padding-bottom:60px;}
+  header{position:sticky;top:0;z-index:10;background:var(--bg);
+    padding:calc(env(safe-area-inset-top) + 14px) 16px 10px;border-bottom:1px solid var(--border);}
+  h1{font-size:19px;margin:0 0 10px;font-weight:700;}
+  .totals{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;}
+  .totals .box{background:var(--card);border-radius:12px;padding:8px 14px;min-width:120px;flex:none;}
+  .totals .box .lbl{font-size:11px;color:var(--muted);}
+  .totals .box .val{font-size:16px;font-weight:700;margin-top:2px;}
+  .tabs{display:flex;gap:8px;overflow-x:auto;padding:10px 16px 2px;}
+  .tab{flex:none;padding:7px 14px;border-radius:20px;background:var(--card);
+    color:var(--muted);font-size:13px;white-space:nowrap;border:1px solid var(--border);}
+  .tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+  main{padding:10px 16px 20px;}
+  .card{background:var(--card);border-radius:14px;padding:12px 14px;margin-bottom:10px;
+    border:1px solid var(--border);}
+  .card .row1{display:flex;justify-content:space-between;align-items:center;}
+  .ma{font-size:16px;font-weight:700;}
+  .gia{font-size:14px;color:var(--muted);}
+  .badge{font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;color:#0b0f14;}
+  .badge.b100{background:var(--green);}
+  .badge.b30{background:var(--amber);}
+  .badge.b20{background:var(--orange);}
+  .badge.b5{background:var(--red);color:#fff;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:12.5px;}
+  .grid2 .k{color:var(--muted);}
+  .grid2 .v{font-weight:600;}
+  .inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+  .inputs label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px;}
+  .inputs input{width:100%;background:var(--card2);border:1px solid var(--border);
+    color:var(--text);border-radius:8px;padding:8px;font-size:14px;}
+  .suggest{margin-top:10px;background:var(--card2);border-radius:10px;padding:8px 10px;
+    font-size:13px;display:flex;justify-content:space-between;align-items:center;}
+  .suggest .num{font-weight:700;font-size:15px;}
+  .fab{position:fixed;right:18px;bottom:24px;width:52px;height:52px;border-radius:50%;
+    background:var(--blue);color:#fff;font-size:26px;border:none;box-shadow:0 4px 14px rgba(0,0,0,.4);}
+  .refresh{background:none;border:none;color:var(--blue);font-size:13px;position:absolute;right:16px;top:calc(env(safe-area-inset-top) + 14px);}
+  .empty{color:var(--muted);text-align:center;padding:40px 20px;font-size:14px;}
+  dialog{border:none;border-radius:16px;padding:0;width:88%;max-width:360px;background:var(--card);color:var(--text);}
+  dialog::backdrop{background:rgba(0,0,0,.6);}
+  .dlg-inner{padding:18px;}
+  .dlg-inner h3{margin:0 0 12px;font-size:16px;}
+  .dlg-inner label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;}
+  .dlg-inner input{width:100%;background:var(--card2);border:1px solid var(--border);
+    color:var(--text);border-radius:8px;padding:9px;font-size:14px;}
+  .dlg-actions{display:flex;gap:8px;margin-top:16px;}
+  .dlg-actions button{flex:1;padding:10px;border-radius:8px;border:none;font-size:14px;font-weight:600;}
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-secondary{background:var(--card2);color:var(--text);}
+  .setup{padding:30px 20px;text-align:center;}
+  .setup input{width:100%;background:var(--card2);border:1px solid var(--border);
+    color:var(--text);border-radius:8px;padding:10px;font-size:13px;margin:14px 0;}
+  .setup button{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:14px;}
+  .stale{color:var(--muted);font-size:11px;text-align:center;padding:10px 0 0;}
+  .modeSwitch{display:flex;background:var(--card);border-radius:10px;padding:3px;gap:3px;margin-bottom:10px;}
+  .modeSwitch button{flex:1;border:none;background:none;color:var(--muted);padding:8px 6px;
+    border-radius:8px;font-size:13px;font-weight:600;}
+  .modeSwitch button.active{background:var(--blue);color:#fff;}
+  .searchBox{padding:0 16px 8px;}
+  .searchBox input{width:100%;background:var(--card);border:1px solid var(--border);
+    color:var(--text);border-radius:10px;padding:9px 12px;font-size:14px;}
+  .ten-cty{font-size:12px;color:var(--muted);margin-top:2px;}
+</style>
+</head>
+<body>
+
+<div id="setupScreen" class="setup" style="display:none;">
+  <h1>Thiết lập lần đầu</h1>
+  <p style="color:var(--muted);font-size:13px;">Dán đường link Web App Google Apps Script (xem hướng dẫn triển khai) vào ô bên dưới.</p>
+  <input id="apiUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+  <br><button onclick="luuApiUrl()">Lưu &amp; Tải dữ liệu</button>
+</div>
+
+<div id="appScreen" style="display:none;">
+  <header>
+    <h1>Cổ Tức &amp; ROI</h1>
+    <button class="refresh" onclick="taiDuLieu()">↻ Làm mới</button>
+    <div class="modeSwitch">
+      <button id="btnModeDanhMuc" onclick="doiChe('danhmuc')">Danh mục của tôi</button>
+      <button id="btnModeThiTruong" onclick="doiChe('thitruong')">Toàn thị trường</button>
+    </div>
+    <div class="totals" id="totals"></div>
+    <div class="tabs" id="tabs"></div>
+  </header>
+  <div class="searchBox" id="searchBox" style="display:none;">
+    <input id="searchInput" placeholder="Tìm mã hoặc tên công ty..." oninput="veGiaoDien()">
+  </div>
+  <main id="main"></main>
+  <div class="stale" id="staleInfo"></div>
+  <button class="fab" id="fabThemMa" onclick="moThemMa()">+</button>
+</div>
+
+<dialog id="dlgThem">
+  <div class="dlg-inner">
+    <h3>Thêm mã cổ phiếu</h3>
+    <label>Nhóm</label>
+    <input id="fNhom" placeholder="VD: Rổ cổ tức tích lũy bắt buộc" list="nhomList">
+    <datalist id="nhomList"></datalist>
+    <label>Mã cổ phiếu</label>
+    <input id="fMa" placeholder="VD: VNM" style="text-transform:uppercase;">
+    <label>Số lượng mục tiêu</label>
+    <input id="fMucTieu" type="number" inputmode="numeric" value="0">
+    <label>Số lượng đang giữ</label>
+    <input id="fDangGiu" type="number" inputmode="numeric" value="0">
+    <div class="dlg-actions">
+      <button class="btn-secondary" onclick="document.getElementById('dlgThem').close()">Hủy</button>
+      <button class="btn-primary" onclick="luuThemMa()">Thêm</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+const LS_KEY = "coTucRoi_apiUrl";
+const LS_MODE_KEY = "coTucRoi_mode";
+let API_URL = localStorage.getItem(LS_KEY) || "";
+let DATA = [];          // sheet "DuLieu" - danh mục cá nhân
+let THI_TRUONG = [];    // sheet "ThiTruong" - toàn thị trường theo ngành
+let MODE = localStorage.getItem(LS_MODE_KEY) || "danhmuc"; // "danhmuc" | "thitruong"
+let ACTIVE_TAB = "Tất cả";
+let saveTimers = {};
+
+// Ngưỡng khuyến cáo mua theo thời gian hoàn vốn — PHẢI khớp với NGUONG_KHUYEN_CAO trong
+// Code.gs. Dùng để hiển thị badge cho dữ liệu "Toàn thị trường" (sheet ThiTruong không lưu
+// sẵn cột % khuyến cáo vì không có mục tiêu/đang giữ để áp dụng).
+function percentTuHoanVon(hoanVon){
+  if (hoanVon === null || hoanVon === undefined || hoanVon === "" || !isFinite(hoanVon)) return null;
+  if (hoanVon < 5) return 1.0;
+  if (hoanVon < 8) return 0.3;
+  if (hoanVon < 10) return 0.2;
+  return 0.05;
+}
+
+function fmtSo(n){
+  if (n === null || n === undefined || n === "" || isNaN(n)) return "-";
+  return Math.round(n).toLocaleString("vi-VN");
+}
+function fmtNam(n){
+  if (n === null || n === undefined || n === "") return "-";
+  return Number(n).toFixed(1) + " năm";
+}
+function badgeClass(pct){
+  if (pct === null) return "b5";
+  if (pct >= 1) return "b100";
+  if (pct >= 0.3) return "b30";
+  if (pct >= 0.2) return "b20";
+  return "b5";
+}
+function badgeText(pct){
+  return "Mua " + Math.round(pct*100) + "% MT";
+}
+
+async function taiDuLieu(){
+  if (!API_URL) { showSetup(); return; }
+  try{
+    const res = await fetch(API_URL + "?t=" + Date.now());
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || "Lỗi không xác định");
+    DATA = json.duLieu || [];
+    THI_TRUONG = json.thiTruong || [];
+    document.getElementById("appScreen").style.display = "block";
+    document.getElementById("setupScreen").style.display = "none";
+    capNhatNutChe();
+    veGiaoDien();
+  }catch(err){
+    alert("Không tải được dữ liệu. Kiểm tra lại đường link Web App.\n" + err.message);
+    showSetup();
+  }
+}
+
+function showSetup(){
+  document.getElementById("setupScreen").style.display = "block";
+  document.getElementById("appScreen").style.display = "none";
+  if (API_URL) document.getElementById("apiUrlInput").value = API_URL;
+}
+function luuApiUrl(){
+  const v = document.getElementById("apiUrlInput").value.trim();
+  if (!v) return;
+  API_URL = v;
+  localStorage.setItem(LS_KEY, v);
+  taiDuLieu();
+}
+
+function doiChe(che){
+  MODE = che;
+  localStorage.setItem(LS_MODE_KEY, che);
+  ACTIVE_TAB = "Tất cả";
+  const si = document.getElementById("searchInput");
+  if (si) si.value = "";
+  capNhatNutChe();
+  veGiaoDien();
+}
+function capNhatNutChe(){
+  document.getElementById("btnModeDanhMuc").className = MODE === "danhmuc" ? "active" : "";
+  document.getElementById("btnModeThiTruong").className = MODE === "thitruong" ? "active" : "";
+  document.getElementById("fabThemMa").style.display = MODE === "danhmuc" ? "block" : "none";
+  document.getElementById("searchBox").style.display = MODE === "thitruong" ? "block" : "none";
+}
+
+function nguonDuLieuHienTai(){ return MODE === "danhmuc" ? DATA : THI_TRUONG; }
+
+function danhSachNhom(){
+  const s = new Set(nguonDuLieuHienTai().map(d => d.nhom || "Chưa phân nhóm"));
+  return Array.from(s).sort();
+}
+
+function veGiaoDien(){
+  if (MODE === "danhmuc") veDanhMuc(); else veThiTruong();
+}
+
+function veTabs(nhoms){
+  const tabsEl = document.getElementById("tabs");
+  tabsEl.innerHTML = "";
+  ["Tất cả"].concat(nhoms).forEach(n => {
+    const b = document.createElement("div");
+    b.className = "tab" + (n === ACTIVE_TAB ? " active" : "");
+    b.textContent = n;
+    b.onclick = () => { ACTIVE_TAB = n; veGiaoDien(); };
+    tabsEl.appendChild(b);
+  });
+}
+
+// ---------- Chế độ "Danh mục của tôi" (sheet DuLieu) ----------
+function veDanhMuc(){
+  veTabs(danhSachNhom());
+  const list = ACTIVE_TAB === "Tất cả" ? DATA : DATA.filter(d => (d.nhom || "Chưa phân nhóm") === ACTIVE_TAB);
+
+  let tongTaiSan = 0, soCanMua = 0;
+  DATA.forEach(d => { tongTaiSan += Number(d.taiSan) || 0; if (Number(d.canMuaThem) > 0) soCanMua++; });
+  document.getElementById("totals").innerHTML = `
+    <div class="box"><div class="lbl">Tổng tài sản</div><div class="val">${fmtSo(tongTaiSan)} đ</div></div>
+    <div class="box"><div class="lbl">Số mã cần mua thêm</div><div class="val">${soCanMua}</div></div>
+    <div class="box"><div class="lbl">Tổng số mã</div><div class="val">${DATA.length}</div></div>
+  `;
+
+  const mainEl = document.getElementById("main");
+  mainEl.innerHTML = "";
+  if (list.length === 0){
+    mainEl.innerHTML = '<div class="empty">Chưa có mã nào trong nhóm này.<br>Bấm nút + để thêm mã mới.</div>';
+  } else {
+    list.forEach(d => {
+      const card = document.createElement("div");
+      card.className = "card";
+      const pct = Number(d.khuyenCaoPercent) || 0;
+      card.innerHTML = `
+        <div class="row1">
+          <div>
+            <span class="ma">${d.ma}</span>
+            <span class="gia"> · ${fmtSo(d.gia)} đ</span>
+          </div>
+          <span class="badge ${badgeClass(pct)}">${d.thoiGianHoanVon ? badgeText(pct) : "Chưa có dữ liệu"}</span>
+        </div>
+        <div class="grid2">
+          <div><span class="k">Cổ tức BQ 5 năm: </span><span class="v">${fmtSo(d.coTucBinhQuan)} đ</span></div>
+          <div><span class="k">Hoàn vốn: </span><span class="v">${fmtNam(d.thoiGianHoanVon)}</span></div>
+        </div>
+        <div class="inputs">
+          <div>
+            <label>Số lượng mục tiêu</label>
+            <input type="number" inputmode="numeric" value="${d.mucTieu || 0}"
+              onchange="capNhatSoLuong('${d.ma}', this.value, null)">
+          </div>
+          <div>
+            <label>Số lượng đang giữ</label>
+            <input type="number" inputmode="numeric" value="${d.dangGiu || 0}"
+              onchange="capNhatSoLuong('${d.ma}', null, this.value)">
+          </div>
+        </div>
+        <div class="suggest">
+          <span>Khuyến cáo mua thêm</span>
+          <span class="num">${fmtSo(d.canMuaThem)} CP</span>
+        </div>
+        <div class="suggest">
+          <span>Tài sản hiện tại</span>
+          <span class="num">${fmtSo(d.taiSan)} đ</span>
+        </div>
+      `;
+      mainEl.appendChild(card);
+    });
+  }
+
+  const latest = DATA.map(d => d.capNhatLuc).filter(Boolean).sort().pop();
+  document.getElementById("staleInfo").textContent = latest ? ("Cập nhật gần nhất: " + new Date(latest).toLocaleString("vi-VN")) : "";
+}
+
+// ---------- Chế độ "Toàn thị trường" (sheet ThiTruong, theo Nhóm ngành) ----------
+function veThiTruong(){
+  veTabs(danhSachNhom());
+
+  let list = ACTIVE_TAB === "Tất cả" ? THI_TRUONG : THI_TRUONG.filter(d => (d.nhom || "Chưa phân nhóm") === ACTIVE_TAB);
+
+  const tuKhoa = (document.getElementById("searchInput").value || "").trim().toUpperCase();
+  if (tuKhoa) {
+    list = list.filter(d => (d.ma || "").toUpperCase().includes(tuKhoa) || (d.ten || "").toUpperCase().includes(tuKhoa));
+  }
+
+  const soNganh = danhSachNhom().length;
+  const soCoDuLieu = THI_TRUONG.filter(d => d.thoiGianHoanVon).length;
+  document.getElementById("totals").innerHTML = `
+    <div class="box"><div class="lbl">Tổng số mã</div><div class="val">${THI_TRUONG.length}</div></div>
+    <div class="box"><div class="lbl">Đã có dữ liệu</div><div class="val">${soCoDuLieu}</div></div>
+    <div class="box"><div class="lbl">Số nhóm ngành</div><div class="val">${soNganh}</div></div>
+  `;
+
+  // Trong mỗi ngành, ưu tiên hiển thị mã có hoàn vốn thấp nhất trước
+  list = list.slice().sort((a, b) => {
+    const ha = isFinite(a.thoiGianHoanVon) ? a.thoiGianHoanVon : Infinity;
+    const hb = isFinite(b.thoiGianHoanVon) ? b.thoiGianHoanVon : Infinity;
+    return ha - hb;
+  });
+
+  const mainEl = document.getElementById("main");
+  mainEl.innerHTML = "";
+  if (list.length === 0){
+    mainEl.innerHTML = '<div class="empty">Không tìm thấy mã nào.<br>Dữ liệu toàn thị trường có thể vẫn đang được quét dần.</div>';
+  } else {
+    list.slice(0, 300).forEach(d => {
+      const pct = percentTuHoanVon(d.thoiGianHoanVon);
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <div class="row1">
+          <div>
+            <span class="ma">${d.ma}</span>
+            <span class="gia"> · ${fmtSo(d.gia)} đ</span>
+            <div class="ten-cty">${d.ten || ""}${d.nhom ? " · " + d.nhom : ""}</div>
+          </div>
+          <span class="badge ${badgeClass(pct)}">${d.thoiGianHoanVon ? badgeText(pct) : "Đang quét..."}</span>
+        </div>
+        <div class="grid2">
+          <div><span class="k">Cổ tức BQ 5 năm: </span><span class="v">${fmtSo(d.coTucBinhQuan)} đ</span></div>
+          <div><span class="k">Hoàn vốn: </span><span class="v">${fmtNam(d.thoiGianHoanVon)}</span></div>
+        </div>
+      `;
+      mainEl.appendChild(card);
+    });
+    if (list.length > 300){
+      const note = document.createElement("div");
+      note.className = "empty";
+      note.textContent = "Hiển thị 300/" + list.length + " mã đầu (đã sắp theo hoàn vốn thấp nhất). Gõ từ khóa để tìm chính xác mã cần xem.";
+      mainEl.appendChild(note);
+    }
+  }
+
+  const latest = THI_TRUONG.map(d => d.capNhatLuc).filter(Boolean).sort().pop();
+  document.getElementById("staleInfo").textContent = latest ? ("Cập nhật gần nhất: " + new Date(latest).toLocaleString("vi-VN") + " (quét dần cả ngày)") : "Chưa có dữ liệu — sheet 'ThiTruong' đang quét dần.";
+}
+
+function capNhatSoLuong(ma, mucTieu, dangGiu){
+  const item = DATA.find(d => d.ma === ma);
+  if (!item) return;
+  if (mucTieu !== null) item.mucTieu = Number(mucTieu) || 0;
+  if (dangGiu !== null) item.dangGiu = Number(dangGiu) || 0;
+  item.taiSan = item.dangGiu * (item.gia || 0);
+  item.canMuaThem = Math.max(0, Math.round(item.mucTieu * (item.khuyenCaoPercent || 0) - item.dangGiu));
+  veGiaoDien();
+
+  clearTimeout(saveTimers[ma]);
+  saveTimers[ma] = setTimeout(() => {
+    fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "capNhatSoLuong", ma: ma, mucTieu: item.mucTieu, dangGiu: item.dangGiu })
+    }).catch(() => alert("Không lưu được thay đổi, kiểm tra kết nối mạng."));
+  }, 600);
+}
+
+function moThemMa(){
+  document.getElementById("nhomList").innerHTML = danhSachNhom().map(n => `<option value="${n}">`).join("");
+  document.getElementById("fMa").value = "";
+  document.getElementById("fMucTieu").value = 0;
+  document.getElementById("fDangGiu").value = 0;
+  document.getElementById("dlgThem").showModal();
+}
+function luuThemMa(){
+  const nhom = document.getElementById("fNhom").value.trim() || "Chưa phân nhóm";
+  const ma = document.getElementById("fMa").value.trim().toUpperCase();
+  const mucTieu = Number(document.getElementById("fMucTieu").value) || 0;
+  const dangGiu = Number(document.getElementById("fDangGiu").value) || 0;
+  if (!ma) { alert("Nhập mã cổ phiếu."); return; }
+
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({ action: "themMa", nhom, ma, mucTieu, dangGiu })
+  }).then(() => {
+    document.getElementById("dlgThem").close();
+    setTimeout(taiDuLieu, 800);
+  }).catch(() => alert("Không thêm được mã, kiểm tra kết nối mạng."));
+}
+
+// Khởi động
+if (!API_URL) { showSetup(); } else { taiDuLieu(); }
+</script>
+</body>
+</html>
