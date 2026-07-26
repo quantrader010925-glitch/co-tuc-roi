@@ -87,6 +87,10 @@
   .searchBox input{width:100%;background:var(--card);border:1px solid var(--border);
     color:var(--text);border-radius:10px;padding:9px 12px;font-size:14px;}
   .ten-cty{font-size:12px;color:var(--muted);margin-top:2px;}
+  .sortBar{padding:0 16px 8px;}
+  .sortBtn{background:var(--card);border:1px solid var(--border);color:var(--muted);
+    border-radius:20px;padding:6px 12px;font-size:12.5px;font-weight:600;}
+  .sortBtn.active{background:rgba(52,152,219,.15);color:var(--blue);border-color:var(--blue);}
 </style>
 </head>
 <body>
@@ -112,6 +116,9 @@
       <button id="btnModeThiTruong" onclick="doiChe('thitruong')">Toàn thị trường</button>
     </div>
     <div class="totals" id="totals"></div>
+    <div class="sortBar" id="sortBar">
+      <button id="btnSapXep" class="sortBtn" onclick="doiSapXep()">⇅ Hoàn vốn: Thấp → Cao</button>
+    </div>
     <div class="tabs" id="tabs"></div>
   </header>
   <div class="searchBox" id="searchBox" style="display:none;">
@@ -161,6 +168,27 @@ let THI_TRUONG = [];    // sheet "ThiTruong" - toàn thị trường theo ngành
 let MODE = localStorage.getItem(LS_MODE_KEY) || "danhmuc"; // "danhmuc" | "thitruong"
 let ACTIVE_TAB = "Tất cả";
 let saveTimers = {};
+const LS_SAPXEP_KEY = "coTucRoi_sapXepTang";
+let SAP_XEP_TANG = (localStorage.getItem(LS_SAPXEP_KEY) ?? "1") === "1"; // sắp xếp hoàn vốn thấp -> cao
+
+/** So sánh hoàn vốn tăng dần; mã chưa có dữ liệu bị đẩy xuống cuối */
+function soSanhHoanVon_(a, b){
+  const ha = (a.thoiGianHoanVon !== null && a.thoiGianHoanVon !== undefined && a.thoiGianHoanVon !== "" && isFinite(a.thoiGianHoanVon)) ? Number(a.thoiGianHoanVon) : Infinity;
+  const hb = (b.thoiGianHoanVon !== null && b.thoiGianHoanVon !== undefined && b.thoiGianHoanVon !== "" && isFinite(b.thoiGianHoanVon)) ? Number(b.thoiGianHoanVon) : Infinity;
+  return ha - hb;
+}
+function doiSapXep(){
+  SAP_XEP_TANG = !SAP_XEP_TANG;
+  localStorage.setItem(LS_SAPXEP_KEY, SAP_XEP_TANG ? "1" : "0");
+  capNhatNutSapXep();
+  veGiaoDien();
+}
+function capNhatNutSapXep(){
+  const b = document.getElementById("btnSapXep");
+  if (!b) return;
+  b.textContent = SAP_XEP_TANG ? "⇅ Hoàn vốn: Thấp → Cao" : "⇅ Thứ tự mặc định";
+  b.className = "sortBtn" + (SAP_XEP_TANG ? " active" : "");
+}
 
 // Ngưỡng khuyến cáo mua theo thời gian hoàn vốn — PHẢI khớp với NGUONG_KHUYEN_CAO trong
 // Code.gs. Dùng để hiển thị badge cho dữ liệu "Toàn thị trường" (sheet ThiTruong không lưu
@@ -247,6 +275,7 @@ function danhSachNhom(){
 }
 
 function veGiaoDien(){
+  capNhatNutSapXep();
   if (MODE === "danhmuc") veDanhMuc(); else veThiTruong();
 }
 
@@ -265,7 +294,8 @@ function veTabs(nhoms){
 // ---------- Chế độ "Danh mục của tôi" (sheet DuLieu) ----------
 function veDanhMuc(){
   veTabs(danhSachNhom());
-  const list = ACTIVE_TAB === "Tất cả" ? DATA : DATA.filter(d => (d.nhom || "Chưa phân nhóm") === ACTIVE_TAB);
+  let list = ACTIVE_TAB === "Tất cả" ? DATA : DATA.filter(d => (d.nhom || "Chưa phân nhóm") === ACTIVE_TAB);
+  if (SAP_XEP_TANG) list = list.slice().sort(soSanhHoanVon_);
 
   let tongTaiSan = 0, soCanMua = 0;
   DATA.forEach(d => { tongTaiSan += Number(d.taiSan) || 0; if (Number(d.canMuaThem) > 0) soCanMua++; });
@@ -345,12 +375,8 @@ function veThiTruong(){
     <div class="box"><div class="lbl">Số nhóm ngành</div><div class="val">${soNganh}</div></div>
   `;
 
-  // Trong mỗi ngành, ưu tiên hiển thị mã có hoàn vốn thấp nhất trước
-  list = list.slice().sort((a, b) => {
-    const ha = isFinite(a.thoiGianHoanVon) ? a.thoiGianHoanVon : Infinity;
-    const hb = isFinite(b.thoiGianHoanVon) ? b.thoiGianHoanVon : Infinity;
-    return ha - hb;
-  });
+  // Trong mỗi ngành/tab, ưu tiên hiển thị mã có hoàn vốn thấp nhất trước (có thể tắt bằng nút sắp xếp)
+  if (SAP_XEP_TANG) list = list.slice().sort(soSanhHoanVon_);
 
   const mainEl = document.getElementById("main");
   mainEl.innerHTML = "";
@@ -381,7 +407,7 @@ function veThiTruong(){
     if (list.length > 300){
       const note = document.createElement("div");
       note.className = "empty";
-      note.textContent = "Hiển thị 300/" + list.length + " mã đầu (đã sắp theo hoàn vốn thấp nhất). Gõ từ khóa để tìm chính xác mã cần xem.";
+      note.textContent = "Hiển thị 300/" + list.length + " mã đầu" + (SAP_XEP_TANG ? " (đã sắp theo hoàn vốn thấp nhất)" : "") + ". Gõ từ khóa để tìm chính xác mã cần xem.";
       mainEl.appendChild(note);
     }
   }
