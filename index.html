@@ -57,10 +57,12 @@
     background:var(--blue);color:#fff;font-size:26px;border:none;box-shadow:0 4px 14px rgba(0,0,0,.4);}
   .empty{color:var(--muted);text-align:center;padding:40px 20px;font-size:14px;}
   .ketQuaTimKiem{max-height:50vh;overflow-y:auto;margin-top:12px;}
-  .ketQuaTimKiem .row{padding:10px 4px;border-bottom:1px solid var(--border);}
+  .ketQuaTimKiem .row{padding:10px 4px;border-bottom:1px solid var(--border);cursor:pointer;}
   .ketQuaTimKiem .row:last-child{border-bottom:none;}
+  .ketQuaTimKiem .row:active{background:var(--card2);}
   .ketQuaTimKiem .ten{font-size:12px;color:var(--muted);margin-top:2px;}
   .tag-danhmuc{font-size:10px;color:var(--green);border:1px solid var(--green);border-radius:8px;padding:1px 6px;margin-left:6px;}
+  .card.highlight{border-color:var(--blue);box-shadow:0 0 0 3px rgba(52,152,219,.5);}
   dialog{border:none;border-radius:16px;padding:0;width:88%;max-width:360px;background:var(--card);color:var(--text);}
   dialog::backdrop{background:rgba(0,0,0,.6);}
   .dlg-inner{padding:18px;}
@@ -281,6 +283,7 @@ function veDanhMuc(){
     list.forEach(d => {
       const card = document.createElement("div");
       card.className = "card";
+      card.id = "card-" + d.ma;
       const pct = Number(d.khuyenCaoPercent) || 0;
       card.innerHTML = `
         <div class="row1">
@@ -358,6 +361,7 @@ function veThiTruong(){
       const pct = percentTuHoanVon(d.thoiGianHoanVon);
       const card = document.createElement("div");
       card.className = "card";
+      card.id = "card-" + d.ma;
       card.innerHTML = `
         <div class="row1">
           <div>
@@ -445,7 +449,7 @@ function veKetQuaTimKiem(){
   }
 
   el.innerHTML = ds.map(d => `
-    <div class="row">
+    <div class="row" onclick="chonKetQua('${d.ma}')">
       <div>
         <span class="ma">${d.ma}</span>
         ${d.trongDanhMuc ? '<span class="tag-danhmuc">Trong danh mục</span>' : ''}
@@ -453,6 +457,41 @@ function veKetQuaTimKiem(){
       <div class="ten">${d.ten || "(chưa rõ tên doanh nghiệp)"}${d.nhom ? " · " + d.nhom : ""}${d.hoanVon ? " · Hoàn vốn " + Number(d.hoanVon).toFixed(1) + " năm" : ""}</div>
     </div>
   `).join("");
+}
+
+/** Bấm chọn 1 kết quả tìm kiếm -> chuyển đúng chế độ/nhóm, cuộn tới và highlight thẻ đó */
+function chonKetQua(ma){
+  document.getElementById("dlgTimKiem").close();
+
+  const coTrongDanhMuc = DATA.some(d => d.ma === ma);
+  const coTrongThiTruong = THI_TRUONG.some(d => d.ma === ma);
+  if (!coTrongDanhMuc && !coTrongThiTruong) return;
+
+  // Ưu tiên ở lại chế độ hiện tại nếu mã có trong chế độ đó, nếu không thì tự chuyển chế độ
+  let modeMoi = MODE;
+  if (MODE === "danhmuc" && !coTrongDanhMuc) modeMoi = "thitruong";
+  if (MODE === "thitruong" && !coTrongThiTruong) modeMoi = "danhmuc";
+
+  MODE = modeMoi;
+  localStorage.setItem(LS_MODE_KEY, modeMoi);
+  ACTIVE_TAB = "Tất cả"; // bỏ lọc theo nhóm để chắc chắn thấy được mã vừa chọn
+
+  if (modeMoi === "thitruong") {
+    // Điền sẵn từ khóa = đúng mã để danh sách chỉ còn (các) mã khớp, tránh bị cắt bớt
+    // bởi giới hạn hiển thị 300 mã trong chế độ Toàn thị trường.
+    document.getElementById("searchInput").value = ma;
+  }
+
+  capNhatNutChe();
+  veGiaoDien();
+
+  setTimeout(() => {
+    const el = document.getElementById("card-" + ma);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("highlight");
+    setTimeout(() => el.classList.remove("highlight"), 2200);
+  }, 80);
 }
 
 function moThemMa(){
